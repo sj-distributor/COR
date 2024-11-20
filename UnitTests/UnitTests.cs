@@ -13,6 +13,7 @@ public class UnitTests
     [TestCase(1, 2, Operation.Division, 0.5)]
     public async Task TestCorProcessorRunningIsOk(decimal number1, decimal number2, Operation operation, decimal result)
     {
+        List<double> list = [];
         var resContext = await CoRProcessor<NumberContext>
             .New()
             .AddRange([
@@ -20,15 +21,19 @@ public class UnitTests
                 new SubtractionProcessor(),
                 new MultiplicationProcessor(),
                 new DivisionProcessor()
-            ]).Execute(new NumberContext()
+            ]).AfterProcessorsExecute((ctx, timeSpan, cancellationToken) =>
+            {
+                list.Add(timeSpan.TotalMilliseconds);
+                return Task.FromResult(ctx);
+            }).Execute(new NumberContext()
             {
                 Number1 = number1,
                 Number2 = number2,
                 Operation = operation
             }, default);
-
-
+        
         Assert.That(resContext.Result, Is.EqualTo(result));
+        Assert.That(list, Has.Count.EqualTo(4));
     }
 
 
